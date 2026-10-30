@@ -2,36 +2,36 @@
 
 **Classless code snippets for [Blades CSS](https://blades.dev).**
 
-A website for templates and snippets created and styled with [Blades CSS](https://blades.dev). The site itself is also built and styled with Blades. The site identity (name and description) lives in `src/consts.ts`.
+An Astro site of Blades-based snippets, itself built and styled with Blades. The site identity (name and description) lives in `src/consts.ts`.
+
+## Agent environment conventions
+
+- **OpenChamber sessions** — manage plans, drafts, specs-in-progress, open questions and todos through OpenChamber's **Project Knowledge** tool (plans, notes, todos). Spec/plan files are committed to `docs/plans/` once drafted; the knowledge plan is the working copy that stays in sync until committed.
+- **OpenCode CLI sessions** — use OpenCode's own plan/todo tools (Plan mode files, `todowrite`). When the bookkeeping is simple enough, also mirror it into the Project Knowledge tool so sessions from either harness see the same state.
+- Either way, finish a task with leftover work by leaving it as a todo (both if simple), so the next session picks it up.
 
 ## Styling architecture
 
-- `src/assets/styles.css` is the single CSS entry point, imported once from `BaseHead`.
-- It imports Blades CSS (the **layered** build) and every role CSS file the site needs.
-- Role CSS files are written separately (e.g. `src/assets/roles/docs-sidebar.css`, `footer.css`, ...) and imported into `styles.css`. Blades ships inside `@layer blades`; role files are unlayered, so site customizations win over the framework without needing `!important`.
-- The site-level styling scope is **`docs-`**: there is **no page-root class** for site styling (do not add one). Scope customizations with semantic element selectors and layout selectors anchored on the landmarks or structure they apply to — e.g. `body:has(> aside.docs-sidebar)`, `aside.docs-sidebar > hgroup`.
-- **No classes by default.** If a site-level component genuinely needs a CSS class, the class must start with the **`docs-`** prefix. `docs-sidebar` is the approved exception currently in use for the sidebar.
-- **Custom properties must start with the `knives-` prefix** — e.g. `--knives-menu-gap`, `--knives-icon-size` in knives.css. This keeps them clear of Blades' own `--pico-*` / `--blades-*` tokens and of other snippets.
-- Use native CSS nesting to keep related descendant, state, and responsive rules alongside their parent selector wherever it improves locality; preserve the intended selector specificity.
+- `src/assets/styles.css` is the single CSS entry point, imported once from `BaseHead`. It imports Blades CSS (the **layered** build) plus one `src/assets/roles/*.css` file per concern.
+- Blades ships inside `@layer blades`; role files are unlayered, so site customizations win over the framework without needing `!important`.
+- The site-level styling scope is **`docs-`**: there is **no page-root class** for site styling (do not add one). Scope customizations with semantic element selectors and layout selectors anchored on the landmarks or structure they apply to — e.g. `body:has(> aside.docs-sidebar)`, `aside.docs-sidebar > hgroup`. Any site-level class must start with **`docs-`**; `docs-sidebar` is the only approved one so far.
+- **Custom properties must start with the `knives-` prefix** (e.g. `--knives-menu-gap`), keeping them clear of Blades' `--pico-*` / `--blades-*` tokens and of other snippets.
+- Prefer native CSS nesting for locality of descendant/state/responsive rules, preserving intended selector specificity.
 
-```css
-/* src/assets/styles.css */
-@import '@anyblades/blades/layered/blades.layered';
-@import '@anyblades/blades/layered/layout/landmarks';
-@import './roles/layout.css';
-```
+## Styling a snippet
 
-```css
-/* src/assets/roles/layout.css — scoped via semantic landmarks, not a root class */
-body:has(> aside.docs-sidebar) {
-	/* two-column docs layout */
-}
-aside.docs-sidebar {
-	> hgroup {
-		/* site identity */
-	}
-}
-```
+- Snippet-specific styles (distinct from the site's `docs-` scope) go beside the snippet in `snippet.css`, wrapped in a stable layer: `@layer snippets.my-snippet {}` — never in a site-wide CSS file.
+- Put only the snippet's own rules and any one-off imports there. `DocsDemoPreview.astro` already supplies the shared base layered Blades stylesheet inside the demo iframe — don't repeat it in `snippet.css` or its displayed/copied source.
+
+## Demo-only JavaScript and Markdown source
+
+- `snippet.js` is optional, runs only inside the sandboxed `DocsDemoPreview` iframe, and is for preview-only interactions; a snippet described as requiring no JavaScript must not depend on it. The snippet page displays and copies HTML and CSS only — treat `snippet.js` as demo support, not part of the snippet's provided source.
+- `snippet.md` is optional and never rendered; when present, its source is displayed (and copied) before the HTML section, to show a Markdown equivalent (e.g. the Markdown task list behind a task-list snippet).
+
+## Content collections
+
+- Snippets live in a **`snippets`** content collection (`src/content/snippets/`, registered in `src/content.config.ts`). Each snippet must be individually navigable **and** appear in a general index of all snippets.
+- Ignore the `blog` collection — a starter leftover, outside this project's direction.
 
 ## Commands
 
@@ -43,50 +43,10 @@ aside.docs-sidebar {
 | `pnpm format`       | Format all files with Prettier         |
 | `pnpm format:check` | Check formatting without writing       |
 
-Start the dev server in background mode and manage it with:
-
-```sh
-astro dev --background
-astro dev stop
-astro dev status
-astro dev logs
-```
+The dev server also runs from the CLI: `astro dev --background | stop | status | logs`.
 
 ## Verifying a change
 
 1. `pnpm format:check` — formatting is clean.
 2. `pnpm build` — the site builds without errors.
-3. Start `astro dev --background` and open the affected routes — confirm the change renders as expected, including light/dark mode and responsive layout.
-
-## Content collections
-
-- Snippets live in a **`snippets`** content collection (`src/content/snippets/`), registered in `src/content.config.ts`.
-- Each snippet must be individually navigable **and** appear in a general index/listing of all snippets.
-- Ignore the `blog` collection for now — it's a leftover from the starter template and not part of this project's direction.
-
-## Styling a snippet
-
-Snippet-specific styles (the snippet's own styles, distinct from the site's `docs-`-scoped styles) go in a dedicated CSS file relative to the snippet, wrapped in its own layer:
-
-```css
-@layer snippets.my-snippet {
-	/* snippet styles */
-}
-```
-
-- `DocsDemoPreview.astro` supplies the shared base layered Blades stylesheet inside the demo iframe. Do not repeat that base import in `snippet.css` or its displayed/copied source.
-- Put only snippet-specific rules and any one-off imports required by that snippet in `snippet.css`.
-- Use a stable layer name so it doesn't collide with Blades (`@layer blades`) or Astro's image styles (`@layer astro.images`).
-- Don't put snippet styles in a site-wide CSS file.
-
-## Demo-only JavaScript
-
-- `snippet.js` is optional and runs only inside the `DocsDemoPreview` iframe, which allows scripts in a sandbox.
-- Use it for preview-only interactions; keep the snippet's base behavior independent of it when the snippet is described as requiring no JavaScript. For example, the Popover API opens the popover declaratively, while the demo script only toggles the star button.
-- The snippet page currently displays and copies HTML and CSS, not `snippet.js`; treat this file as demo support rather than part of the snippet's provided source.
-
-## Optional Markdown source
-
-- `snippet.md` is optional and is never rendered.
-- When present, its source is displayed (and copied) before the HTML section on the snippet page.
-- Use it to show the Markdown equivalent of a snippet's HTML, such as the Markdown task list behind a task-list snippet.
+3. With `astro dev --background`, open the affected routes — confirm the change renders as expected, including light/dark mode and responsive layout. You can also try to break the component by feeding it worst-case data.
