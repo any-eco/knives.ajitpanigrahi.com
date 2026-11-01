@@ -1,8 +1,4 @@
 body:has(> aside.docs-sidebar) > footer {
 	flex-wrap: wrap;
 	gap: calc(var(--pico-spacing) * 0.5);
-
-	> p {
-		margin: 0;
-	}
 }

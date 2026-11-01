@@ -2,7 +2,7 @@
 title: Task List
 description: A task list built from a plain unordered list with disabled checkboxes, following the structure Astro generates for Markdown task lists.
 stage: 'alpha'
-size: 20
+size: 23
 tag:
   - list
 ---
