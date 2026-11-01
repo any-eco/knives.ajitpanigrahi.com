@@ -7,6 +7,8 @@
     "build": "astro build",
     "predeploy": "pnpm build",
     "deploy": "wrangler deploy",
+    "extract-vars": "node scripts/extract-customizer-vars.mjs",
+    "check-vars": "node scripts/extract-customizer-vars.mjs --check",
     "preview": "astro preview",
     "astro": "astro",
     "format": "prettier --write .",

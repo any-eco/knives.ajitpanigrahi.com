@@ -1,0 +1,230 @@
+---
+/**
+ * Merged customizer panel: a native <dialog> opened from the Customize button
+ * in the footer, hosting the Variables component (Themes moved into its own
+ * "Save & Manage Themes" dialog, reachable from the header). Components stay
+ * independent so the layout can change later. The dialog docks to the right
+ * on wide screens (the page frees the rail via html[data-docs-docked]) and is
+ * a modal overlay on mobile.
+ *
+ * The dialog styles are deliberately UNLAYERED: Blades ships its own
+ * full-screen `dialog` component styles inside @layer blades, and a layered
+ * author rule registered before that stylesheet loses to it. Unlayered site
+ * customizations win over the framework (the repo-wide AGENTS.md rule).
+ */
+import CustomizerVariables from './CustomizerVariables.astro';
+import CustomizerThemes from './CustomizerThemes.astro';
+---
+
+<dialog id="docs-panel" data-docs-panel>
+	<header data-docs-panel-header>
+		<strong>Customize</strong>
+		<div data-docs-panel-actions>
+			<button
+				data-docs-open="docs-themes-panel"
+				aria-haspopup="dialog"
+				aria-expanded="false"
+				title="Save and manage themes"
+			>
+				Save &amp; Manage Themes
+			</button>
+			<button data-docs-close="docs-panel" aria-label="Close the customizer" title="Close">
+				✕
+			</button>
+		</div>
+	</header>
+	<div data-docs-panel-columns>
+		<CustomizerVariables title="Variables" />
+	</div>
+</dialog>
+
+<dialog id="docs-themes-panel" data-docs-themes-dialog>
+	<header data-docs-panel-header>
+		<strong>Save &amp; Manage Themes</strong>
+		<button data-docs-close="docs-themes-panel" aria-label="Close themes" title="Close">
+			✕
+		</button>
+	</header>
+	<CustomizerThemes title="Themes" />
+</dialog>
+
+<div id="docs-notice" popover role="status"></div>
+
+<style is:global>
+	:root {
+		--docs-cx-panel-w: min(46rem, 96vw);
+	}
+
+	@media (min-width: 1100px) {
+		:root {
+			--docs-cx-panel-w: min(44rem, 40vw);
+		}
+	}
+
+	/* Native dialogs, docked to the inline end. */
+	dialog[data-docs-panel],
+	dialog[data-docs-themes-dialog] {
+		position: fixed;
+		inset-block: 0;
+		inset-inline-start: auto;
+		inset-inline-end: 0;
+		height: 100%;
+		max-height: none;
+		max-width: none;
+		min-width: 0;
+		min-height: 0;
+		z-index: 999;
+		margin: 0;
+		border: 0;
+		border-inline-start: var(--pico-border-width) solid var(--pico-muted-border-color);
+		border-radius: 0;
+		padding: 0;
+		justify-content: flex-start;
+		align-items: stretch;
+		backdrop-filter: none;
+		background: var(--pico-background-color);
+		color: var(--pico-color);
+		box-shadow: -16px 0 32px rgb(0 0 0 / 0.2);
+	}
+
+	dialog[data-docs-panel] {
+		width: var(--docs-cx-panel-w);
+	}
+
+	/* The themes dialog stacks in the SAME dock slot but slightly thinner,
+	   so the customize panel peeks out on the inline-start side and the
+	   stacking is visually obvious. */
+	dialog[data-docs-themes-dialog] {
+		width: calc(var(--docs-cx-panel-w) - 0.5rem);
+		z-index: 1000;
+	}
+
+	/* Docked mode: free the rail the panel sits in by narrowing the page. */
+	html[data-docs-docked] body {
+		padding-inline-end: var(--docs-cx-panel-w);
+	}
+
+	/* The themes dialog stacks ON TOP of the customize dialog when both are
+	   open — same dock position, later in the paint order. */
+	dialog[data-docs-themes-dialog] {
+		z-index: 1000;
+	}
+
+	/* Open state only — a closed native dialog keeps its UA display:none. */
+	dialog[data-docs-panel][open],
+	dialog[data-docs-themes-dialog][open] {
+		display: flex;
+		flex-direction: column;
+
+		&::backdrop {
+			background: rgb(0 0 0 / 0.4);
+		}
+	}
+
+	[data-docs-panel-header] {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.5rem 1rem;
+		border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+
+		> strong {
+			font-size: 0.9rem;
+		}
+
+		> [data-docs-panel-actions],
+		> button[data-docs-open] {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.25rem;
+			margin: 0;
+
+			> button,
+			&:has(> svg, > span) {
+				font-size: 0.72rem;
+				padding: 0.25rem 0.55rem;
+				box-shadow: none;
+				background: transparent;
+				border: 0;
+				justify-content: center;
+				color: var(--pico-muted-color);
+
+				&:hover {
+					color: var(--pico-color);
+				}
+			}
+
+			> button[aria-label^='Close'] {
+				width: 1.7rem;
+				height: 1.7rem;
+				padding: 0;
+				border-radius: 50%;
+
+				&:hover {
+					background: color-mix(in srgb, var(--pico-muted-border-color) 60%, transparent);
+				}
+			}
+		}
+
+		/* The themes dialog's ✕ is a direct header child. */
+		> button[data-docs-close][aria-label^='Close'] {
+			width: 1.7rem;
+			height: 1.7rem;
+			padding: 0;
+			margin: 0;
+			background: transparent;
+			border: 0;
+			box-shadow: none;
+			border-radius: 50%;
+			font-size: 0.75rem;
+			color: var(--pico-muted-color);
+
+			&:hover {
+				background: color-mix(in srgb, var(--pico-muted-border-color) 60%, transparent);
+				color: var(--pico-color);
+			}
+		}
+	}
+
+	[data-docs-panel-columns] {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+
+		> [data-docs-variables] {
+			flex: 1;
+			min-width: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		dialog[data-docs-panel],
+		dialog[data-docs-themes-dialog],
+		dialog[data-docs-panel] *,
+		dialog[data-docs-themes-dialog] * {
+			transition: none !important;
+			animation: none !important;
+		}
+	}
+
+	#docs-notice {
+		position: fixed;
+		inset-block-end: 1rem;
+		inset-inline: 0;
+		margin-inline: auto;
+		width: max-content;
+		max-width: 92vw;
+		padding: 0.45rem 0.9rem;
+		background: var(--pico-background-color);
+		border: var(--pico-border-width) solid var(--pico-primary-border);
+		border-radius: var(--pico-border-radius);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+		font-size: 0.78rem;
+	}
+</style>
+
+<script>
+	import '../customizer/customizer';
+</script>

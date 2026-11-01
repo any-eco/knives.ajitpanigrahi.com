@@ -1,12 +1,39 @@
 ---
 import { SITE_AUTHOR, SITE_AUTHOR_URL, SITE_REPO_URL } from '../consts';
 import ThemeToggle from './ThemeToggle.astro';
+import CustomizerPanel from './CustomizerPanel.astro';
 
 const year = new Date().getFullYear();
 ---
 
 <footer class="container-fluid">
-	<ThemeToggle />
+	<div data-docs-entry>
+		<ThemeToggle />
+
+		<button
+			data-docs-open="docs-panel"
+			title="Open the theme customizer"
+			aria-haspopup="dialog"
+			aria-expanded="false"
+		>
+			<svg
+				viewBox="0 0 24 24"
+				width="20"
+				height="20"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.75"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<circle cx="12" cy="12" r="3.25"></circle>
+				<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+			</svg>
+			<span>Customize</span>
+		</button>
+	</div>
+	<CustomizerPanel />
 
 	<p>
 		&copy; {year}{' '}
@@ -20,3 +47,56 @@ const year = new Date().getFullYear();
 		.
 	</p>
 </footer>
+
+<style is:global>
+	@layer docs.site-entry {
+		/* Footer rhythm: the controls row and the copyright line breathe with
+		   half a Pico spacing between them (last <p> margin removed so the
+		   gap is the only spacing). */
+		body > footer {
+			display: flex;
+			flex-direction: column;
+			row-gap: calc(var(--pico-spacing) * 0.5);
+
+			> [data-docs-entry],
+			> p {
+				margin: 0;
+			}
+		}
+
+		[data-docs-entry] {
+			display: flex;
+			gap: calc(var(--pico-spacing) * 0.5);
+
+			/* Blades gives [role=group] a full bottom margin; the footer is the
+			   group's only context, so pull it back into line. */
+			> [role='group'] {
+				margin-bottom: 0;
+			}
+
+			> button {
+				display: inline-flex;
+				align-items: center;
+				gap: var(--knives-menu-gap);
+				padding: 0.35rem 0.6rem;
+				margin: 0;
+				background: transparent;
+				border: var(--pico-border-width) solid var(--pico-muted-border-color);
+				box-shadow: none;
+				border-radius: var(--pico-border-radius);
+				color: var(--pico-muted-color);
+				font-size: 0.85rem;
+
+				> svg {
+					width: var(--knives-icon-size);
+					height: var(--knives-icon-size);
+				}
+
+				/* Same hover treatment as the theme-toggle ghost buttons. */
+				&:hover {
+					background: color-mix(in srgb, var(--pico-muted-border-color) 90%, transparent);
+				}
+			}
+		}
+	}
+</style>

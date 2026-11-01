@@ -1,0 +1,190 @@
+---
+/**
+ * Customizer · Themes component: name + save, theme list (apply / fork /
+ * rename / delete). Rendable standalone (playground page) or inside the
+ * merged side panel. Styled in the `docs.themes` cascade layer.
+ */
+interface Props {
+	id?: string;
+	title?: string;
+}
+
+const { id, title = 'Themes' } = Astro.props;
+---
+
+<section id={id} data-docs-themes>
+	<h2 data-docs-heading>{title}</h2>
+	<form data-docs-save onsubmit="return false;">
+		<label>
+			Name
+			<input id="docs-name" type="text" value="My theme" autocomplete="off" />
+		</label>
+		<button id="docs-save" type="button">
+			Save
+		</button>
+		<span id="docs-dirty" hidden aria-label="Unsaved changes">
+			●
+		</span>
+	</form>
+	<div data-docs-panel-body>
+		<div data-docs-io>
+			<button type="button" id="docs-export">
+				Export
+			</button>
+			<label data-docs-import>
+				Import
+				<input
+					type="file"
+					id="docs-import"
+					accept="application/json"
+					aria-label="Import a theme JSON file"
+				/>
+			</label>
+		</div>
+		<ol id="docs-theme-list"></ol>
+	</div>
+</section>
+
+<style is:global>
+	@layer docs.themes {
+		[data-docs-themes] {
+			display: flex;
+			flex-direction: column;
+			min-width: 0;
+			min-height: 0;
+
+			> [data-docs-heading] {
+				flex: none;
+				margin: 0;
+				padding: 0.6rem 1rem;
+				border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+				font-size: 0.9rem;
+			}
+
+			> form[data-docs-save] {
+				flex: none;
+				display: flex;
+				align-items: flex-end;
+				gap: 0.4rem;
+				padding: 0.6rem 1rem;
+				border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+
+				> label {
+					flex: 1;
+					min-width: 0;
+					margin: 0;
+					font-size: 0.68rem;
+					color: var(--pico-muted-color);
+
+					> input {
+						height: 1.85rem;
+						padding: 0.1rem 0.4rem;
+						margin: 0.2rem 0 0;
+						font-size: 0.8rem;
+					}
+				}
+
+				> #docs-save {
+					font-size: 0.72rem;
+					padding: 0.3rem 0.55rem;
+					margin: 0;
+					box-shadow: none;
+				}
+
+				> #docs-dirty {
+					color: var(--pico-primary);
+					font-size: 0.9rem;
+				}
+			}
+
+			> [data-docs-panel-body] {
+				flex: 1;
+				min-height: 0;
+				overflow-y: auto;
+				overscroll-behavior: contain;
+				scrollbar-width: thin;
+				padding-block: 0.5rem;
+			}
+		}
+
+		[data-docs-io] {
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+			padding: 0.5rem 1rem;
+			border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+
+			> #docs-export,
+			> label[data-docs-import] {
+				display: inline-block;
+				cursor: pointer;
+				font-size: 0.72rem;
+				font-weight: 400;
+				padding: 0.22rem 0.4rem;
+				margin: 0;
+				line-height: 1.5;
+				background: transparent;
+				border: var(--pico-border-width) solid var(--pico-muted-border-color);
+				border-radius: var(--pico-border-radius);
+				box-shadow: none;
+				color: var(--pico-muted-color);
+
+				&:hover {
+					background: color-mix(in srgb, var(--pico-muted-border-color) 60%, transparent);
+					color: var(--pico-color);
+				}
+			}
+
+			> label[data-docs-import] > input[type='file'] {
+				display: none;
+			}
+		}
+
+		#docs-theme-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+
+			li {
+				display: flex;
+				align-items: center;
+				gap: 0.15rem;
+				padding: 0.22rem 0.6rem 0.22rem 1rem;
+
+				& + li {
+					box-shadow: 0 1px 0 color-mix(in srgb, var(--pico-muted-border-color) 45%, transparent);
+				}
+
+				> span {
+					flex: 1;
+					min-width: 0;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+					font-size: 0.78rem;
+				}
+
+				> b {
+					color: var(--pico-primary);
+					font-size: 0.66rem;
+				}
+
+				button,
+				#docs-theme-list li button {
+					font-size: 0.72rem;
+					padding: 0.22rem 0.4rem;
+					box-shadow: none;
+					background: transparent;
+					border: 0;
+					color: var(--pico-primary);
+				}
+			}
+
+			[data-docs-empty] {
+				padding: 0.35rem 1rem;
+				font-size: 0.72rem;
+				color: var(--pico-muted-color);
+			}
+		}
+	}
+</style>

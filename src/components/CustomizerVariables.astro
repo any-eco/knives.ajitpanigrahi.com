@@ -1,0 +1,360 @@
+---
+/**
+ * Customizer · Variables component. Rendable standalone (playground page) or
+ * inside the merged side panel (footer). Styled in the `docs.vars` cascade
+ * layer, scoped by data attributes only.
+ */
+import { categoriesOf, hexOf, sources, variables } from '../customizer/registry';
+
+interface Props {
+	id?: string;
+	popover?: boolean;
+	title?: string;
+}
+
+const { id, popover = false, title = 'Variables' } = Astro.props;
+---
+
+<section id={id} data-docs-variables popover={popover ? '' : undefined}>
+	<h2 data-docs-heading>
+		{title}
+		<span data-docs-mode role="group" aria-label="Edit values for color scheme">
+			<button
+				data-docs-scheme-mode-button="light"
+				aria-pressed="true"
+				title="Edit the values used in light mode"
+			>
+				Light
+			</button>
+			<button
+				data-docs-scheme-mode-button="dark"
+				aria-pressed="false"
+				title="Edit the dark-specific values; untouched variables inherit the light value"
+			>
+				Dark
+			</button>
+		</span>
+	</h2>
+	<form data-docs-filter-bar onsubmit="return false;">
+		<input
+			data-docs-filter
+			type="search"
+			placeholder="Filter variables"
+			aria-label="Filter variables by name"
+			autocomplete="off"
+		/>
+		<span data-docs-filter-count aria-live="polite"></span>
+	</form>
+	<div data-docs-panel-body>
+		{sources.map((source) => (
+			<section data-docs-source={source}>
+				<h3>{source.charAt(0).toUpperCase() + source.slice(1)}</h3>
+				{categoriesOf(source).map((category) => (
+					<section data-docs-group>
+						<h4>{category}</h4>
+						<ul>
+							{variables
+								.filter((v) => v.source === source && v.category === category)
+								.map((v) => (
+									<li data-docs-row={v.name} data-type={v.type}>
+										<span data-docs-name title={v.initial}>
+											<code>{v.name}</code>
+										</span>
+										<span data-docs-input>
+											{v.type === 'color' ? (
+												<input
+													name="value"
+													type="color"
+													value={hexOf(v.initial) ?? '#7f7f7f'}
+													aria-label={`Set ${v.name}`}
+													title={`${v.name} — initial: ${v.initial}`}
+												/>
+											) : (
+												<input
+													name="value"
+													type="text"
+													placeholder="initial"
+													aria-label={`Set ${v.name}`}
+													title={`${v.name} — edit to override; initial: ${v.initial}`}
+												/>
+											)}
+										</span>
+										{v.type === 'url' && (
+											<span
+												data-docs-icon-preview
+												aria-hidden="true"
+												style={`--docs-cx-icon-preview: ${v.initial}`}
+											/>
+										)}
+										<button
+											data-docs-reset
+											aria-label={`Reset ${v.name} to its initial value`}
+											title={`Reset ${v.name} to its initial value`}
+											disabled
+										>
+											⟲
+										</button>
+										<small data-docs-current>initial</small>
+									</li>
+								))}
+						</ul>
+					</section>
+				))}
+			</section>
+		))}
+	</div>
+	<footer data-docs-bar>
+		<span>
+			<b id="docs-modified">0</b> modified
+		</span>
+		<button id="docs-reset-all" disabled>
+			Reset all
+		</button>
+	</footer>
+</section>
+
+<style is:global>
+	@layer docs.vars {
+		[data-docs-variables] {
+			display: flex;
+			flex-direction: column;
+			min-width: 0;
+			min-height: 0;
+
+			> [data-docs-heading] {
+				flex: none;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin: 0;
+				padding: 0.6rem 1rem;
+				border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+				font-size: 0.9rem;
+
+				/* Light/dark scheme-half editor toggle: Blades styles [role=group]
+				   as a full-width flex form row (width 100%, children flex:auto);
+				   put it back to a compact inline control. */
+				> [data-docs-mode] {
+					display: inline-flex;
+					align-items: center;
+					flex: none;
+					width: auto;
+					gap: 0.125rem;
+					margin: 0;
+
+					> button {
+						flex: none;
+						width: auto;
+						font-size: 0.72rem;
+						padding: 0.2rem 0.55rem;
+						box-shadow: none;
+						background: transparent;
+						border: 0;
+						color: var(--pico-muted-color);
+						font-weight: 400;
+
+						&:hover {
+							color: var(--pico-color);
+						}
+
+						&[aria-pressed='true'] {
+							background: var(--pico-secondary-background);
+							color: var(--pico-secondary);
+							font-weight: 600;
+						}
+					}
+				}
+			}
+
+			> [data-docs-filter-bar] {
+				flex: none;
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				padding: 0.45rem 0.75rem;
+				border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+
+				> input[data-docs-filter] {
+					flex: 1;
+					min-width: 0;
+					height: 1.7rem;
+					padding: 0.1rem 0.45rem;
+					margin: 0;
+					font-size: 0.72rem;
+					/* type="search" gets Blades' magnifier icon and extra leading
+					   padding; plain text field wins for a dense editor panel. */
+					appearance: textfield;
+					background-image: none;
+					-webkit-appearance: textfield;
+					padding-inline-start: 0.45rem;
+					border-radius: var(--pico-border-radius);
+				}
+
+				> [data-docs-filter-count] {
+					flex: none;
+					min-width: 2.6rem;
+					text-align: end;
+					font-size: 0.62rem;
+					color: var(--pico-muted-color);
+				}
+			}
+
+			> [data-docs-panel-body] {
+				flex: 1;
+				min-height: 0;
+				overflow-y: auto;
+				overscroll-behavior: contain;
+				scrollbar-width: thin;
+				padding-block: 0.25rem 1rem;
+			}
+
+			> [data-docs-bar] {
+				flex: none;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 0.5rem 0.75rem;
+				border-top: var(--pico-border-width) solid var(--pico-muted-border-color);
+				font-size: 0.78rem;
+
+				> b {
+					font-size: 0.85rem;
+				}
+
+				> #docs-reset-all {
+					font-size: 0.72rem;
+					padding: 0.22rem 0.4rem;
+					box-shadow: none;
+					background: transparent;
+					border: 0;
+					color: var(--pico-primary);
+
+					&:disabled {
+						color: var(--pico-muted-color);
+					}
+				}
+			}
+		}
+
+		[data-docs-source] > h3 {
+			position: sticky;
+			top: 0;
+			z-index: 2;
+			background: var(--pico-background-color);
+			margin: 0;
+			padding: 0.5rem 1rem 0.3rem;
+			text-transform: capitalize;
+			letter-spacing: 0.01rem;
+			font-size: 0.72rem;
+			font-weight: 700;
+			color: var(--pico-color);
+			box-shadow: 0 1px 0 var(--pico-muted-border-color);
+		}
+
+		[data-docs-group] > h4 {
+			margin: 0.5rem 0 0;
+			padding: 0.3rem 1rem;
+			text-transform: uppercase;
+			font-size: 0.65rem;
+			font-weight: 600;
+			letter-spacing: 0.01rem;
+			color: var(--pico-muted-color);
+		}
+
+		[data-docs-group] ul {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+
+			[data-docs-row] {
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				padding: 0.3rem 0.75rem;
+				box-shadow: 0 1px 0 color-mix(in srgb, var(--pico-muted-border-color) 45%, transparent);
+
+				> [data-docs-name] {
+					flex: 1;
+					min-width: 0;
+
+					> code {
+						display: block;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+						font-size: 0.72rem;
+					}
+				}
+
+				> [data-docs-input] {
+					flex: none;
+
+					> input[type='text'] {
+						width: 5.5rem;
+						height: 1.85rem;
+						padding: 0.1rem 0.4rem;
+						margin: 0;
+						font-size: 0.72rem;
+
+						&::placeholder {
+							color: var(--pico-muted-color);
+							opacity: 0.7;
+						}
+					}
+
+					> input[type='color'] {
+						width: 2.1rem;
+						height: 1.85rem;
+						padding: 0.15rem;
+						margin: 0;
+						border: var(--pico-border-width) solid var(--pico-muted-border-color);
+						border-radius: var(--pico-border-radius);
+						background: transparent;
+					}
+				}
+
+				> [data-docs-icon-preview] {
+					flex: none;
+					width: 1rem;
+					height: 1rem;
+					background-color: var(--pico-muted-color);
+					-webkit-mask: var(--docs-cx-icon-preview) center / contain no-repeat;
+					mask: var(--docs-cx-icon-preview) center / contain no-repeat;
+				}
+
+				> button[data-docs-reset] {
+					flex: none;
+					width: 1.6rem;
+					height: 1.6rem;
+					padding: 0;
+					margin: 0;
+					background: transparent;
+					border: 0;
+					box-shadow: none;
+					border-radius: 50%;
+					font-size: 0.8rem;
+					line-height: 1;
+					color: var(--pico-muted-color);
+
+					&:not(:disabled):hover {
+						background: color-mix(in srgb, var(--pico-muted-border-color) 60%, transparent);
+						color: var(--pico-color);
+					}
+
+					&:disabled {
+						visibility: hidden;
+					}
+				}
+
+				> [data-docs-current] {
+					flex: none;
+					width: 2.9rem;
+					text-align: end;
+					font-size: 0.62rem;
+					color: var(--pico-muted-color);
+					opacity: 0.85;
+				}
+			}
+		}
+	}
+</style>

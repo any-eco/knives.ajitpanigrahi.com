@@ -6,6 +6,7 @@ import { Font } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
 import { SITE_TITLE } from '../consts';
+import { darkHalfOf, lightHalfOf, presets, variables } from '../customizer/registry';
 
 interface Props {
 	title: string;
@@ -16,6 +17,21 @@ interface Props {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
 const { title, description, image = FallbackImage } = Astro.props;
+
+// Build-time data for the flash-free theme applier below: preset value maps
+// (so restoring a preset theme needs no registry on the page) and the
+// element-scoped selections the applier must emit rules for.
+const docsPresetValues = Object.fromEntries(presets.map((p) => [p.id, p.values]));
+// Per-variable metadata for the applier: element-scoped selectors, and the
+// light/dark halves of Pico palette colors (`light-dark(a, b)` pairs).
+const docsSelectors = Object.fromEntries(
+	variables.filter((v) => v.selector).map((v) => [v.name, v.selector]),
+);
+const docsPaired = Object.fromEntries(
+	variables
+		.filter((v) => v.type === 'color' && darkHalfOf(v.initial) && lightHalfOf(v.initial))
+		.map((v) => [v.name, [lightHalfOf(v.initial), darkHalfOf(v.initial)]]),
+);
 ---
 
 <!-- Fonts -->
@@ -33,6 +49,79 @@ const { title, description, image = FallbackImage } = Astro.props;
 		}
 	} catch {}
 </script>
+<!-- Flash-free theme customizer applier (v2, site-wide). Restores the saved
+     active theme as an unlayered :where(:root) override on every page. -->
+<script is:inline define:vars={{ docsPresetValues, docsSelectors, docsPaired }}>
+	try {
+		const data = JSON.parse(localStorage.getItem('knives-customizer') || 'null');
+		if (data && data.version === 1 && data.activeId) {
+			const values =
+				(data.themes || []).find((t) => t.id === data.activeId)?.values ||
+				docsPresetValues[data.activeId];
+			if (values) {
+				const safe = (v) => String(v).replace(/[{};]/g, '');
+				const names = new Set(
+					Object.keys(values)
+						.filter((k) => k.startsWith('--'))
+						.map((k) => k.replace(/@dark$/, '')),
+				);
+				const roots = [];
+				const scoped = new Map();
+				const darkOnly = [];
+				for (const name of names) {
+					const light = values[name] || '';
+					const dark = values[name + '@dark'] || '';
+					if (!light && !dark) continue;
+					const pair = docsPaired[name];
+					let base = null; // plain value for the base rule
+					if (pair) {
+						if (dark)
+							base = light
+								? 'light-dark(' + safe(light) + ', ' + safe(dark) + ')'
+								: 'light-dark(' + pair[0] + ', ' + safe(dark) + ')';
+						else if (light) base = safe(light); // dark inherits the light value
+					} else {
+						if (dark) darkOnly.push('\t' + name + ': ' + safe(dark) + ';');
+						if (light) base = safe(light); // else: the site initial stays for light
+					}
+					if (base) {
+						const line = '\t' + name + ': ' + base + ';';
+						const sel = docsSelectors[name];
+						if (sel) scoped.set(sel, [...(scoped.get(sel) || []), line]);
+						else roots.push(line);
+					}
+				}
+				let css = roots.length ? ':root:root {\n' + roots.join('\n') + '\n}' : '';
+				for (const [sel, lines] of scoped) {
+					css += '\n' + sel + ' {\n' + lines.join('\n') + '\n}';
+				}
+				if (darkOnly.length) {
+					css +=
+						'\n:root:root[data-theme="dark"] {\n' +
+						darkOnly.join('\n') +
+						'\n}' +
+						'\n@media (prefers-color-scheme: dark) {\n\t:root:root:not([data-theme]) {\n' +
+						darkOnly.join('\n') +
+						'\n\t}\n}';
+				}
+				css = css.trim();
+				if (css) {
+					const style = document.createElement('style');
+					style.id = 'docs-vars';
+					style.textContent = css;
+					document.head.append(style);
+				}
+			}
+		}
+	} catch {}
+</script>
+<style is:global>
+	/* Cascade layer order: the customizer components must sit ABOVE the
+	   Blades layer (Blades ships its own dialog/accordion components), and
+	   all of them below the site's unlayered role CSS. Registering the whole
+	   order here pins it for every stylesheet in the document. */
+	@layer blades, docs.panel-shell, docs.vars, docs.themes, docs.chrome, docs.site-entry;
+</style>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="icon" href="/favicon.ico" />
 <link rel="sitemap" href="/sitemap-index.xml" />
