@@ -625,12 +625,16 @@ document.addEventListener('click', (e) => {
 	}
 
 	// Which scheme half the variable rows edit; switching only re-renders.
+	// The pressed half is a plain Pico button (primary fill); the other half
+	// renders as Pico's `.outline` class — all colors come from Pico itself.
 	const schemeMode = button.dataset.docsSchemeModeButton;
 	if (schemeMode) {
 		state.schemeMode = schemeMode as State['schemeMode'];
-		$$('[data-docs-scheme-mode-button]').forEach((b) =>
-			b.setAttribute('aria-pressed', String(b === button)),
-		);
+		$$('[data-docs-scheme-mode-button]').forEach((b) => {
+			const pressed = b === button;
+			b.setAttribute('aria-pressed', String(pressed));
+			b.classList.toggle('outline', !pressed);
+		});
 		refreshRows();
 	}
 });

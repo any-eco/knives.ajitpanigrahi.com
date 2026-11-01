@@ -28,6 +28,7 @@ const { id, popover = false, title = 'Variables' } = Astro.props;
 			</button>
 			<button
 				data-docs-scheme-mode-button="dark"
+				class="outline"
 				aria-pressed="false"
 				title="Edit the dark-specific values; untouched variables inherit the light value"
 			>
@@ -132,36 +133,19 @@ const { id, popover = false, title = 'Variables' } = Astro.props;
 				font-size: 0.9rem;
 
 				/* Light/dark scheme-half editor toggle: Blades styles [role=group]
-				   as a full-width flex form row (width 100%, children flex:auto);
-				   put it back to a compact inline control. */
+				   as a full-width flex form row (width 100%, children flex:auto),
+				   so this resets it to a compact inline control; the buttons
+				   themselves are plain Pico buttons (default vs `outline`
+				   variant for the unselected half) whose size comes from the
+				   spacing variables. */
 				> [data-docs-mode] {
-					display: inline-flex;
-					align-items: center;
-					flex: none;
 					width: auto;
-					gap: 0.125rem;
 					margin: 0;
 
 					> button {
-						flex: none;
-						width: auto;
-						font-size: 0.72rem;
-						padding: 0.2rem 0.55rem;
-						box-shadow: none;
-						background: transparent;
-						border: 0;
-						color: var(--pico-muted-color);
-						font-weight: 400;
-
-						&:hover {
-							color: var(--pico-color);
-						}
-
-						&[aria-pressed='true'] {
-							background: var(--pico-secondary-background);
-							color: var(--pico-secondary);
-							font-weight: 600;
-						}
+						--pico-form-element-spacing-vertical: 0.25rem;
+						--pico-form-element-spacing-horizontal: 0.5rem;
+						font-size: 0.75rem;
 					}
 				}
 			}
